@@ -9,7 +9,7 @@ log.info('Loading options ...')
 
 parser = OptionParser()
 parser.add_option("--baseDir", help="base directory",
-                  default="/nfs/dust/atlas/user/fmeloni")
+                  default="/data/dust/user/fmeloni")
 parser.add_option("--process", help="process", default="muonGun")
 parser.add_option("--step", help="step", default="10")
 parser.add_option("--min", help="min event", default="0")
@@ -29,6 +29,7 @@ process_list = [
     "muonGun_pT_1000_5000",
     "muonGun_pT_250_1000",
     "muonGun_pT_50_250",
+    "multiMuonGun",
     "photonGun_E_0_50",
     "photonGun_E_1000_5000",
     "photonGun_E_250_1000",
@@ -46,10 +47,30 @@ process_list = [
     "x1x1",
     "x1x1_3TeV",
     "x1x1_Rodo",
+    "x1x1_2blet",
+    "x1x1_3plet",
+    "x1x1_5plet",
     "neutronGun_E_0_50",   
     "neutronGun_E_50_250",   
-    "neutronGun_E_250_1000"   
-]
+    "neutronGun_E_250_1000",
+    "neutronGun_E_1000_5000",
+    "nuGun_pT_0_50",
+    "dijet_mjj_50",
+    "dijet_mjj_100",
+    "dijet_mjj_250",
+    "dijet_mjj_500",
+    "dijet_mjj_1000",
+    "dijet_mjj_5000",
+    "dijet_mjj_10000",
+    "mm2mvw2jj",
+    "mm2vvz2jj",
+    "mm2jj_ISRoff",
+    "mm2jj_ISRon",
+    "mm2h2bb",
+    "mm2h2ww",
+    "mm2h2tata",
+    "mm2h2zz"
+    ]
 
 process = options.process
 if process not in process_list:
@@ -62,6 +83,12 @@ filename = "sim_" + str(process)+"_"+str(options.min).zfill(6) + \
 
 fsub = open(baseDir+"/MuonCollider/Batch/scripts_sim/"+filename, "w+")
 
+hepmc = False
+if "dijet" in process:
+    hepmc = True
+if "mm2" in process:
+    hepmc = True
+
 for ievt in range(int(options.min), int(options.max), int(options.step)):
 
     startevent = ievt
@@ -70,8 +97,12 @@ for ievt in range(int(options.min), int(options.max), int(options.step)):
         fsub.write("executable = " + baseDir +
                    "/MuonCollider/Batch/SIM_Job_x1x1EVENT.sh \n")
     else:
-        fsub.write("executable = " + baseDir +
-                   "/MuonCollider/Batch/SIM_Job_GENEVENT.sh \n")
+        if hepmc:
+            fsub.write("executable = " + baseDir +
+                       "/MuonCollider/Batch/SIM_Job_HEPMC.sh \n")
+        else:
+            fsub.write("executable = " + baseDir +
+                       "/MuonCollider/Batch/SIM_Job_GENEVENT.sh \n")
 
     fsub.write("arguments = "+str(startevent)+" " +
                process + " "+options.step+" \n")
@@ -80,12 +111,11 @@ for ievt in range(int(options.min), int(options.max), int(options.step)):
         fsub.write(
             "+MySingularityImage = \"/cvmfs/unpacked.cern.ch/registry.hub.docker.com/infnpd/mucoll-ilc-framework:1.4-centos8\" \n")
     else:
-        fsub.write(
-            "+MySingularityImage = \"/nfs/dust/atlas/user/fmeloni/MuonCollider/myImages/k4toroid.sif\" \n")
+        fsub.write("+MySingularityImage = \"/cvmfs/unpacked.cern.ch/ghcr.io/muoncollidersoft/mucoll-sim-alma9:v2.9.7\" \n")
     fsub.write("+MySingularityArgs = \"--no-home -B " + baseDir +
-               "/MuonCollider:/code -B " + baseDir + "/DataMuC:/data\" \n")
+               "/MuonCollider:/code -B " + baseDir + "/DataMuC:/dataMuC\" \n")
     fsub.write("universe = vanilla"+" \n")
-    fsub.write("requirements = OpSysAndVer == \"CentOS7\" \n")
+    #fsub.write("requirements = OpSysAndVer == \"CentOS7\" \n")
     fsub.write("RequestMemory = 2000 \n")
     if options.nologs:
         fsub.write("output = /dev/null \n")
@@ -99,7 +129,7 @@ for ievt in range(int(options.min), int(options.max), int(options.step)):
         fsub.write("log = " + baseDir + "/Logs_Condor/sim_"+str(process) +
                    "_"+str(startevent).zfill(6)+"_$(ClusterId).$(ProcId).log"+" \n")
     if process != "x1x1":
-        fsub.write("environment = \"APPTAINER_TMPDIR=/nfs/dust/atlas/user/fmeloni/apptainer/tmp APPTAINER_CACHEDIR=/nfs/dust/atlas/user/fmeloni/apptainer/cache\" \n")
+        fsub.write("environment = \"APPTAINER_TMPDIR=/data/dust/user/fmeloni/apptainer/tmp APPTAINER_CACHEDIR=/data/dust/user/fmeloni/apptainer/cache\" \n")
     fsub.write("on_exit_hold = (ExitBySignal == True) || (ExitStatus != 0) \n")
     fsub.write("transfer_executable = False"+" \n")
     fsub.write("should_transfer_files = False"+" \n")

@@ -11,11 +11,13 @@ parser = OptionParser()
 parser.add_option("--outDir", help="dir to store the output",
                   default="Batch/scripts_reco/")
 parser.add_option("--baseDir", help="base directory",
-                  default="/nfs/dust/atlas/user/fmeloni")
+                  default="/data/dust/user/fmeloni")
 parser.add_option("--process", help="process", default="muonGun")
 parser.add_option("--step", help="step", default="10")
 parser.add_option("--min", help="min event", default="0")
 parser.add_option("--max", help="max event", default="10000")
+parser.add_option("--BIB", help="enable overlay",
+                  action='store_true', default=False)
 parser.add_option("--nologs", help="logs to /dev/null",
                   action='store_true', default=False)
 (options, args) = parser.parse_args()
@@ -31,6 +33,7 @@ process_list = [
     "muonGun_pT_1000_5000",
     "muonGun_pT_250_1000",
     "muonGun_pT_50_250",
+    "multiMuonGun",
     "photonGun_E_0_50",
     "photonGun_E_1000_5000",
     "photonGun_E_250_1000",
@@ -46,10 +49,30 @@ process_list = [
     "x1x1",
     "x1x1_3TeV",
     "x1x1_Rodo",
+    "x1x1_2blet",
+    "x1x1_3plet",
+    "x1x1_5plet",
     "neutronGun_E_0_50",
     "neutronGun_E_50_250",   
-    "neutronGun_E_250_1000"  
-]
+    "neutronGun_E_250_1000",  
+    "neutronGun_E_1000_5000",
+    "nuGun_pT_0_50", 
+    "dijet_mjj_50",
+    "dijet_mjj_100",
+    "dijet_mjj_250",
+    "dijet_mjj_500",
+    "dijet_mjj_1000",
+    "dijet_mjj_5000",
+    "dijet_mjj_10000",
+    "mm2mvw2jj",
+    "mm2vvz2jj",
+    "mm2jj_ISRoff",
+    "mm2jj_ISRon",
+    "mm2h2bb",
+    "mm2h2ww",
+    "mm2h2tata",
+    "mm2h2zz"
+    ]
 
 if options.process not in process_list:
     log.error('Unsupported process!')
@@ -58,7 +81,10 @@ if options.process not in process_list:
 baseDir = options.baseDir
 
 process = options.process
-filename = "reco_" + \
+filename = "reco"
+if options.BIB:
+    filename += "BIB"
+filename += "_" + \
         str(process)+"_"+str(options.min).zfill(6) + \
         "_"+str(options.max).zfill(6)+".submit"
 
@@ -70,16 +96,14 @@ for ievt in range(int(options.min), int(options.max), int(options.step)):
 
     if "x1" in options.process:
         fsub.write(
-            "executable = /nfs/dust/atlas/user/fmeloni/MuonCollider/Batch/RECOx1x1_Job_EVENT.sh \n")
-    elif "photon" in options.process:
-        fsub.write(
-            "executable = /nfs/dust/atlas/user/fmeloni/MuonCollider/Batch/RECO_Job_noBIB_EVENT.sh \n")        
-    elif "neutron" in options.process:
-        fsub.write(
-            "executable = /nfs/dust/atlas/user/fmeloni/MuonCollider/Batch/RECO_Job_noBIB_EVENT.sh \n")        
+            "executable = /data/dust/user/fmeloni/MuonCollider/Batch/RECOx1x1_Job_EVENT.sh \n")
     else:
-        fsub.write(
-            "executable = /nfs/dust/atlas/user/fmeloni/MuonCollider/Batch/RECO_Job_EVENT.sh \n")
+        if options.BIB:
+            fsub.write(
+                "executable = /data/dust/user/fmeloni/MuonCollider/Batch/RECO_BIB_Job_EVENT.sh \n")
+        else:
+            fsub.write(
+                "executable = /data/dust/user/fmeloni/MuonCollider/Batch/RECO_Job_EVENT.sh \n")
 
     fsub.write("arguments = "+str(startevent)+" "+process+" \n")
     fsub.write("universe = vanilla"+" \n")
@@ -95,23 +119,25 @@ for ievt in range(int(options.min), int(options.max), int(options.step)):
         fsub.write("log = " + baseDir + "/Logs_Condor/reco_"+str(process) +
                    "_"+str(startevent).zfill(6)+"_$(ClusterId).$(ProcId).log"+" \n")
 
-    fsub.write("requirements = OpSysAndVer == \"CentOS7\" \n")
-    if "photon" not in options.process:
+    #fsub.write("requirements = OpSysAndVer == \"CentOS7\" \n")
+    #if "photon" not in options.process:
+    if options.BIB:
+        fsub.write("RequestMemory = 32000 \n")
+        fsub.write("+requestRuntime=288000 \n")
+    else:
         fsub.write("RequestMemory = 8000 \n")
         fsub.write("+requestRuntime=28800 \n")
+
     # fsub.write("+requestRuntime=115200 \n")
-    fsub.write("environment = \"APPTAINER_TMPDIR=/nfs/dust/atlas/user/fmeloni/apptainer/tmp APPTAINER_CACHEDIR=/nfs/dust/atlas/user/fmeloni/apptainer/cache\" \n")
+    fsub.write("environment = \"APPTAINER_TMPDIR=/data/dust/user/fmeloni/apptainer/tmp APPTAINER_CACHEDIR=/data/dust/user/fmeloni/apptainer/cache\" \n")
     fsub.write("on_exit_hold = (ExitBySignal == True) || (ExitStatus != 0) \n")
-    # fsub.write("+MySingularityImage = \"/cvmfs/unpacked.cern.ch/registry.hub.docker.com/infnpd/mucoll-ilc-framework:1.7-almalinux9\" \n")
-    fsub.write(
-        "+MySingularityImage = \"/nfs/dust/atlas/user/fmeloni/MuonCollider/myImages/k4toroid.sif\" \n")
+
+    fsub.write("+MySingularityImage = \"/cvmfs/unpacked.cern.ch/ghcr.io/muoncollidersoft/mucoll-sim-alma9:v2.9.7\" \n")
 
     fsub.write("+MySingularityArgs = \"--no-home -B " + baseDir +
-               "/MuonCollider:/code -B " + baseDir + "/DataMuC:/data\" \n")
+               "/MuonCollider:/code -B " + baseDir + "/DataMuC:/dataMuC\" \n")
     fsub.write("transfer_executable = False"+" \n")
     fsub.write("should_transfer_files = False"+" \n")
-    fsub.write(
-        "periodic_release = ((JobStatus == 5) && (time() - EnteredCurrentStatus) > 240)"+" \n")
     fsub.write("queue"+" \n\n")
 
 fsub.close()

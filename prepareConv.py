@@ -11,7 +11,7 @@ parser = OptionParser()
 parser.add_option("--outDir", help="dir to store the output",
                   default="Batch/scripts_conv/")
 parser.add_option("--baseDir", help="base directory",
-                  default="/nfs/dust/atlas/user/fmeloni")
+                  default="/data/dust/user/fmeloni")
 parser.add_option("--process", help="process", default="muonGun")
 parser.add_option("--step", help="step", default="10")
 parser.add_option("--min", help="min event", default="0")
@@ -45,12 +45,12 @@ for ievt in range(int(options.min), int(options.max), int(options.step)):
 
     if process == "bib":
         fsub.write(
-            "executable = /nfs/dust/atlas/user/fmeloni/MuonCollider/Batch/CONVBIB_Job_EVENT.sh \n")
+            "executable = /data/dust/user/fmeloni/MuonCollider/Batch/CONVBIB_Job_EVENT.sh \n")
     else:
         fsub.write(
-            "executable = /nfs/dust/atlas/user/fmeloni/MuonCollider/Batch/CONV_Job_EVENT.sh \n")
+            "executable = /data/dust/user/fmeloni/MuonCollider/Batch/CONV_Job_EVENT.sh \n")
     fsub.write("arguments = "+str(startevent)+" "+process+" \n")
-    fsub.write("+MySingularityImage = \"/nfs/dust/atlas/user/fmeloni/MuonCollider/myImages/k4toroid.sif\" \n")
+    fsub.write("+MySingularityImage = \"/data/dust/user/fmeloni/MuonCollider/myImages/k4toroid.sif\" \n")
     fsub.write("+MySingularityArgs = \"--no-home -B " + baseDir + "/MuonCollider:/code -B " + baseDir + "/DataMuC:/data\" \n")
     fsub.write("universe = vanilla"+" \n")
     if options.nologs:
