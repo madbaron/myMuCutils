@@ -14,7 +14,7 @@ mkdir -p /dataMuC/histBIB
 
 # ESPPU
 #n = 57800 decays/m * 246 m / 6667 (cycles) / 200 (decays per cycle) = 10.66
-#n = 21.32 to get 1 BX (both beams) --> 85 to get 4 BX for oversampling
+#n = 42.64 to get 4 BX for oversampling
 #python3 /code/detector-simulation/utils/fluka_to_slcio_new.py -n ${2} /dataMuC/BIB10TeV/FLUKA/summary${1}_DET_IP.dat BIBinput.slcio
 python3 /code/detector-simulation/utils/fluka_remix.py -n ${2} /dataMuC/BIB10TeV/FLUKA/summary${1}_DET_IP.dat BIBinput.slcio
 
